@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
@@ -40,8 +41,10 @@ class _MyHomePageState extends State<MyHomePage> {
   // static const Duration _ignoreDuration = Duration(milliseconds: 20);
 
   List<Results>? songList;
+  Results selectedResult = Results();
   List<Object> songnames = ['asjbhasyh', ';asihiawsk'];
   String selectedSong = '';
+  var currentSelectedValue;
 
   @override
   void initState() {
@@ -133,16 +136,18 @@ class _MyHomePageState extends State<MyHomePage> {
     });
   }
 
-  Future<void> setSelectedSong(Results? value) async {
-    SongInfo results = await ApiService().getSongInfo(value?.id??0);
+  Future<void> setSelectedSong(Object? value) async {
+    Results results = value as Results;
+    SongInfo newResults = await ApiService().getSongInfo(value.id??0);
     setState(() {
-      selectedSong = results.previews?.previewHqMp3 ?? '';
+      currentSelectedValue = results;
+      selectedSong = newResults.previews?.previewHqMp3 ?? '';
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return Scaffold( 
       appBar: AppBar(
         title: const Text('Test Title'),
       ),
@@ -151,20 +156,24 @@ class _MyHomePageState extends State<MyHomePage> {
         children: [
           DropdownButton(
             isExpanded: true,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            value: currentSelectedValue,
+            hint: const Text("Select song"),
+            style: const TextStyle(color: Colors.blue),
               items: songList
-                  ?.map((e) => DropdownMenuItem(
-                      child: new Text(e.name ?? ""), value: e))
+                  ?.map((e) => DropdownMenuItem(value: e,
+                      child: Text(e.name ?? "")))
                   .toList(),
               onChanged: (newValue) {
                 setSelectedSong(newValue);
               }),
           ElevatedButton(
               onPressed: () {
-                playAudioFromUrl(
-                    selectedSong);
+                playAudioFromUrl(selectedSong);
               },
               child: const Text('Play Audio')),
           ElevatedButton(
+            
               onPressed: () {
                 pauseAudio();
               },
@@ -174,9 +183,26 @@ class _MyHomePageState extends State<MyHomePage> {
                 calibrate(_accelerometerEvent?.y ?? 0);
               },
               child: const Text('Calibrate')),
-          Text(_accelerometerEvent?.y.toStringAsFixed(1) ?? '?'),
-          Text(_calibratedAxis.toStringAsFixed(1)),
-          Text(_newTempoValue.toStringAsFixed(1)),
+          Container(
+            color: Colors.white,
+            padding: const EdgeInsets.all(20.0),
+            child: Table(
+              children: [
+                TableRow(children: [
+                  const Text("Accelerometer Y axis"),
+                  Text(_accelerometerEvent?.y.toStringAsFixed(1) ?? '?'),
+                ]),
+                TableRow(children: [
+                  const Text("Calibrated Y axis"),
+                  Text(_calibratedAxis.toStringAsFixed(1)),
+                ]),
+                TableRow(children: [
+                  const Text("Tempo Value"),
+                  Text(_newTempoValue.toStringAsFixed(1)),
+                ])
+              ],
+            ),
+          ),
         ],
       )),
     );
